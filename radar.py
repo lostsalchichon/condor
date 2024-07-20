@@ -1,5 +1,7 @@
+# radar.py
 import cv2
 import numpy as np
+import subprocess
 
 # Load the COCO class labels the model was trained on
 CLASSES = ["N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", 
@@ -10,6 +12,12 @@ prototxt_path = './data/ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt'
 model_path = './data/frozen_inference_graph.pb'
 net = cv2.dnn.readNetFromTensorflow(model_path, prototxt_path)
 
+# Alarm path
+warning_path = './alarms/warning.wav'
+
+def play_alarm():
+    subprocess.Popen(['afplay', warning_path])  # Play the sound asynchronously
+
 def detect_objects(frame):
     h, w = frame.shape[:2]
     frame_resized = cv2.resize(frame, (300, 300))
@@ -19,6 +27,7 @@ def detect_objects(frame):
     net.setInput(blob)
     detections = net.forward()
 
+    detected_classes = set()
     for i in range(detections.shape[2]):
         confidence = detections[0, 0, i, 2]
         if confidence > 0.2:  # Minimum confidence to filter weak detections
@@ -33,5 +42,9 @@ def detect_objects(frame):
                 cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
                 print(f"Detected {label} at ({startX}, {startY}), ({endX}, {endY})")
+                detected_classes.add(CLASSES[idx])
+
+    if detected_classes:
+        play_alarm()
 
     return frame
