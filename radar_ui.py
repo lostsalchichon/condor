@@ -1,9 +1,10 @@
 import streamlit as st
 import cv2
 import numpy as np
+from radar import detect_objects
 
 # Set page configuration
-st.set_page_config(page_title="Condor - Radar de UAVs", page_icon="📷", layout="wide")
+st.set_page_config(page_title="Condor - Radar de UAVs", page_icon="✈", layout="wide")
 
 # Custom CSS for black minimalistic background
 st.markdown(
@@ -32,13 +33,14 @@ def get_camera_frame():
     if ret:
         return frame
     else:
-        pass
-        #return np.zeros((480, 640, 3), dtype=np.uint8)
+        return np.zeros((480, 640, 3), dtype=np.uint8)
 
 # Stream camera feed
 frame = get_camera_frame()
-frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-st.image(frame, channels="RGB")
+if frame is not None:
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame_with_detections = detect_objects(frame)
+    st.image(frame_with_detections, channels="RGB")
 
 # Run the Streamlit app
 if __name__ == "__main__":

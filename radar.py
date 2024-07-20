@@ -1,7 +1,5 @@
 import cv2
 import numpy as np
-import tkinter as tk
-from tkinter import messagebox
 
 # Load the COCO class labels the model was trained on
 CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", 
@@ -9,20 +7,11 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus"
            "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
 
 # Load the serialized model from disk
-prototxt_path = '/Users/danielm/Documents/coding/GitHub/condor'
-caffemodel_path = 'path/to/res10_300x300_ssd_iter_140000.caffemodel'
+prototxt_path = './data/deploy.prototxt.txt'
+caffemodel_path = './data/res10_300x300_ssd_iter_140000.caffemodel'
 net = cv2.dnn.readNetFromCaffe(prototxt_path, caffemodel_path)
 
-# Initialize the webcam
-cap = cv2.VideoCapture(0)
-
-def detect_objects():
-    # Grab the frame from the video stream
-    ret, frame = cap.read()
-    if not ret:
-        messagebox.showerror("Error", "Failed to capture image from webcam.")
-        return
-
+def detect_objects(frame):
     # Resize the frame to have a width of 300 pixels (required by the model)
     frame_resized = cv2.resize(frame, (300, 300))
 
@@ -44,22 +33,4 @@ def detect_objects():
                 y = startY - 15 if startY - 15 > 15 else startY + 15
                 cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-    cv2.imshow("Frame", frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        cap.release()
-        cv2.destroyAllWindows()
-        root.quit()
-
-    # Call detect_objects again after a delay
-    root.after(10, detect_objects)
-
-# Create the main window
-root = tk.Tk()
-root.title("Condor - Radar de UAVs")
-
-# Create and pack the start button
-start_button = tk.Button(root, text="Start Detection", command=detect_objects)
-start_button.pack()
-
-# Run the Tkinter main loop
-root.mainloop()
+    return frame
