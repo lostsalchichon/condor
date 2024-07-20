@@ -9,7 +9,7 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus"
            "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
 
 # Load the serialized model from disk
-prototxt_path = 'path/to/deploy.prototxt'
+prototxt_path = '/Users/danielm/Documents/coding/GitHub/condor'
 caffemodel_path = 'path/to/res10_300x300_ssd_iter_140000.caffemodel'
 net = cv2.dnn.readNetFromCaffe(prototxt_path, caffemodel_path)
 
