@@ -9,7 +9,9 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus"
            "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
 
 # Load the serialized model from disk
-net = cv2.dnn.readNetFromCaffe("path_to_deploy.prototxt", "path_to_MobileNetSSD_deploy.caffemodel")
+prototxt_path = 'path/to/deploy.prototxt'
+caffemodel_path = 'path/to/res10_300x300_ssd_iter_140000.caffemodel'
+net = cv2.dnn.readNetFromCaffe(prototxt_path, caffemodel_path)
 
 # Initialize the webcam
 cap = cv2.VideoCapture(0)
