@@ -31,7 +31,6 @@ def get_camera_feed():
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             yield frame
         else:
             break
@@ -46,9 +45,9 @@ frame_placeholder = st.empty()
 try:
     for frame in frame_generator:
         frame_with_detections = detect_objects(frame)
-        frame_placeholder.image(frame_with_detections, channels="RGB")
-except RuntimeError:
-    st.error("Unable to access the webcam. Please ensure it is connected and accessible.")
+        frame_placeholder.image(cv2.cvtColor(frame_with_detections, cv2.COLOR_BGR2RGB), channels="RGB")
+except RuntimeError as e:
+    st.error(f"Unable to access the webcam: {e}")
 
 # Run the Streamlit app
 if __name__ == "__main__":

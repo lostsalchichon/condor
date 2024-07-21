@@ -2,15 +2,10 @@
 import cv2
 import numpy as np
 import subprocess
+from ultralytics import YOLO
 
-# Load the COCO class labels the model was trained on
-CLASSES = ["N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", 
-           "airplane", "bird", "umbrella", "frisbee", "kite", "remote"]
-
-# Load the serialized model from disk
-prototxt_path = './data/ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt'
-model_path = './data/frozen_inference_graph.pb'
-net = cv2.dnn.readNetFromTensorflow(model_path, prototxt_path)
+# Load the YOLOv8 model
+model = YOLO('yolov8s.pt')
 
 # Alarm path
 warning_path = './alarms/warning.wav'
@@ -20,29 +15,28 @@ def play_alarm():
 
 def detect_objects(frame):
     h, w = frame.shape[:2]
-    frame_resized = cv2.resize(frame, (300, 300))
     
-    # Convert the frame to a blob
-    blob = cv2.dnn.blobFromImage(frame_resized, 1/255.0, (300, 300), (0, 0, 0))
-    net.setInput(blob)
-    detections = net.forward()
+    # Perform detection
+    results = model(frame)
 
     detected_classes = set()
-    for i in range(detections.shape[2]):
-        confidence = detections[0, 0, i, 2]
-        if confidence > 0.2:  # Minimum confidence to filter weak detections
-            idx = int(detections[0, 0, i, 1])
-            if idx < len(CLASSES) and CLASSES[idx] in ["airplane", "bird", "umbrella", "frisbee", "kite", "remote"]:
-                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-                (startX, startY, endX, endY) = box.astype("int")
+    for result in results:
+        for detection in result.boxes:
+            confidence = detection.conf.item()  # Convert tensor to Python float
+            if confidence > 0.5:  # Minimum confidence to filter weak detections
+                idx = int(detection.cls.item())  # Convert tensor to Python int
+                class_name = model.names[idx]
+                if class_name == "iha":  # Adjust to detect only drones
+                    box = detection.xyxy[0].cpu().numpy()
+                    (startX, startY, endX, endY) = box.astype("int")
 
-                label = "{}: {:.2f}%".format(CLASSES[idx], confidence * 100)
-                cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-                y = startY - 15 if startY - 15 > 15 else startY + 15
-                cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    label = "{}: {:.2f}%".format(class_name, confidence * 100)
+                    cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
+                    y = startY - 15 if startY - 15 > 15 else startY + 15
+                    cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                print(f"Detected {label} at ({startX}, {startY}), ({endX}, {endY})")
-                detected_classes.add(CLASSES[idx])
+                    print(f"Detected {label} at ({startX}, {startY}), ({endX}, {endY})")
+                    detected_classes.add(class_name)
 
     if detected_classes:
         play_alarm()
