@@ -3,9 +3,11 @@ import cv2
 import numpy as np
 import subprocess
 from ultralytics import YOLO
+from speed_estimation import estimate_speed_from_video_frame
 
 # Load the YOLOv8 model
 model = YOLO('yolov8s.pt')
+names = model.model.names
 
 # Alarm path
 warning_path = './alarms/warning.wav'
@@ -23,7 +25,7 @@ def detect_objects(frame):
     for result in results:
         for detection in result.boxes:
             confidence = detection.conf.item()  # Convert tensor to Python float
-            if confidence > 0.5:  # Minimum confidence to filter weak detections
+            if confidence > 0.2:  # Minimum confidence to filter weak detections
                 idx = int(detection.cls.item())  # Convert tensor to Python int
                 class_name = model.names[idx]
                 if class_name == "iha":  # Adjust to detect only drones
@@ -40,5 +42,8 @@ def detect_objects(frame):
 
     if detected_classes:
         play_alarm()
+
+    # Integrate speed estimation
+    frame = estimate_speed_from_video_frame(frame)
 
     return frame
