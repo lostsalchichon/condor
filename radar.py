@@ -12,10 +12,20 @@ names = model.model.names
 # Alarm path
 warning_path = './alarms/warning.wav'
 
+# Speech path
+speech_path = './speech/detected.wav'
+
+# Flag to check if speech has been played
+speech_played = False
+
+def play_speech():
+    subprocess.Popen(['afplay', speech_path]) # Play speech asynchronously
+
 def play_alarm():
     subprocess.Popen(['afplay', warning_path])  # Play the sound asynchronously
 
 def detect_objects(frame):
+    global speech_played  # Declare speech_played as global
     h, w = frame.shape[:2]
     
     # Perform detection
@@ -40,8 +50,14 @@ def detect_objects(frame):
                     print(f"Detected {label} at ({startX}, {startY}), ({endX}, {endY})")
                     detected_classes.add(class_name)
 
+
     if detected_classes:
+        if not speech_played:
+            play_speech()
+            speech_played = True
         play_alarm()
+    else:
+        speech_played = False  # Reset the flag if no classes are detected
 
     # Integrate speed estimation
     frame = estimate_speed_from_video_frame(frame)
