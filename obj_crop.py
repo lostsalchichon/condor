@@ -9,7 +9,7 @@ model = YOLO("yolov8s.pt")
 names = model.names
 
 # Directory to save cropped objects
-crop_dir_name = "./objscropp"
+crop_dir_name = "./objscrop"
 if not os.path.exists(crop_dir_name):
     os.makedirs(crop_dir_name)
 

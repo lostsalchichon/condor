@@ -4,7 +4,8 @@ import numpy as np
 import subprocess
 from ultralytics import YOLO
 from speed_estimation import estimate_speed_from_video_frame
-from obj_cropping import crop_objects  # Import the crop_objects function
+from obj_crop import crop_objects
+from objexclude.birdexclude import bird_exclude, crop_birds
 
 # Load the YOLOv8 model
 model = YOLO('yolov8s.pt')
@@ -28,28 +29,34 @@ def play_alarm():
 def detect_objects(frame):
     global speech_played  # Declare speech_played as global
     h, w = frame.shape[:2]
-    
-    # Perform detection
-    results = model(frame)
 
+    # Perform drone detection
+    results = model(frame)
     detected_classes = set()
+
+    # Perform bird detection
+    bird_detections = bird_exclude(frame)
+    bird_boxes = {tuple(box): confidence for box, confidence, _ in bird_detections}
+
     for result in results:
         for detection in result.boxes:
-            confidence = detection.conf.item()  # Convert tensor to Python float
-            if confidence > 0.2:  # Minimum confidence to filter weak detections
-                idx = int(detection.cls.item())  # Convert tensor to Python int
+            confidence = detection.conf.item()
+            if confidence > 0.4:
+                idx = int(detection.cls.item())
                 class_name = model.names[idx]
-                if class_name == "iha":  # Adjust to detect only drones
-                    box = detection.xyxy[0].cpu().numpy()
-                    (startX, startY, endX, endY) = box.astype("int")
+                box = tuple(detection.xyxy[0].cpu().numpy().astype("int"))
 
-                    label = "{}: {:.2f}%".format(class_name, confidence * 100)
-                    cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-                    y = startY - 15 if startY - 15 > 15 else startY + 15
-                    cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-                    print(f"Detected {label} at ({startX}, {startY}), ({endX}, {endY})")
-                    detected_classes.add(class_name)
+                if class_name == "iha":
+                    bird_confidence = bird_boxes.get(box)
+                    if bird_confidence and bird_confidence > confidence:
+                        crop_birds(frame, [(box, bird_confidence, class_name)])
+                    else:
+                        cv2.rectangle(frame, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
+                        label = f"{class_name}: {confidence * 100:.2f}%"
+                        y = box[1] - 15 if box[1] - 15 > 15 else box[1] + 15
+                        cv2.putText(frame, label, (box[0], y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                        detected_classes.add(class_name)
+                        crop_objects(frame, [result])
 
     if detected_classes:
         if not speech_played:
@@ -58,9 +65,6 @@ def detect_objects(frame):
         play_alarm()
     else:
         speech_played = False  # Reset the flag if no classes are detected
-
-    # Integrate object cropping
-    crop_objects(frame, results)
 
     # Integrate speed estimation
     frame = estimate_speed_from_video_frame(frame)
