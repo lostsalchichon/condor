@@ -4,6 +4,7 @@ import numpy as np
 import subprocess
 from ultralytics import YOLO
 from speed_estimation import estimate_speed_from_video_frame
+from obj_cropping import crop_objects  # Import the crop_objects function
 
 # Load the YOLOv8 model
 model = YOLO('yolov8s.pt')
@@ -19,7 +20,7 @@ speech_path = './speech/detected.wav'
 speech_played = False
 
 def play_speech():
-    subprocess.Popen(['afplay', speech_path]) # Play speech asynchronously
+    subprocess.Popen(['afplay', speech_path])  # Play speech asynchronously
 
 def play_alarm():
     subprocess.Popen(['afplay', warning_path])  # Play the sound asynchronously
@@ -50,7 +51,6 @@ def detect_objects(frame):
                     print(f"Detected {label} at ({startX}, {startY}), ({endX}, {endY})")
                     detected_classes.add(class_name)
 
-
     if detected_classes:
         if not speech_played:
             play_speech()
@@ -58,6 +58,9 @@ def detect_objects(frame):
         play_alarm()
     else:
         speech_played = False  # Reset the flag if no classes are detected
+
+    # Integrate object cropping
+    crop_objects(frame, results)
 
     # Integrate speed estimation
     frame = estimate_speed_from_video_frame(frame)
