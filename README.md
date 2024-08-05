@@ -8,6 +8,7 @@ Working modules:
 
 
 Needed updates:
+- Optimize File-saving process.
 - Model crops, and saves detected+ignored objects
 - Model trains itself using the self-made drone database.
 - Model trains itself using the detected+ignored classes database.
