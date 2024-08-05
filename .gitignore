@@ -125,7 +125,7 @@ dmypy.json
 *.caffemodel
 *.pb
 *.pth
-*.pt
+.pt
 *.tflite
 *.onnx
 
