@@ -1,6 +1,7 @@
 # obj_cropping.py
 import os
 import cv2
+import time
 from ultralytics import YOLO
 from ultralytics.utils.plotting import Annotator, colors
 
@@ -33,4 +34,6 @@ def crop_objects(frame, results):
                 annotator.box_label(box, color=colors(int(cls), True), label=names[int(cls)])
 
                 crop_obj = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
-                cv2.imwrite(os.path.join(crop_dir_name, str(idx) + ".png"), crop_obj)
+                timestamp = int(time.time())  # Get current timestamp
+                filename = f"{timestamp}_{idx}.png"
+                cv2.imwrite(os.path.join(crop_dir_name, filename), crop_obj)
